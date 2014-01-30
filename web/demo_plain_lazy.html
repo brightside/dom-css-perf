@@ -1,0 +1,38 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" id="view" content="user-scalable=no, initial-scale=1, maximum-scale=1"/>
+    <title>Lazy list</title>
+    <style>
+        .item {
+            border-top: 2px solid gray;
+            background-color: #f0f0f0;
+            position: absolute;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        body {
+            -webkit-user-select: none;
+            overflow-y: hide;
+        }
+    </style>
+  </head>
+  <body style="font-family: Avenir">
+    <div id="heading">Scrollable list with 100k items with variable heights</div>
+    <div><button id="test">Start scroll test</button></div>
+    <div>
+        <div id="main" style="left: 10px; right: 55px; height: 500px; position: absolute; background-color: lightgray; overflow-y: hidden;">
+        </div>
+        <!-- not working yet
+        <div id="bar" style="width: 40px; height: 400px; position: absolute; right: 10px; background-color: lightblue;">
+            <div id="thumb" style="width: 40px; height: 40px; position:absolute; left: 0px; background-color: red;"></div>
+        </div>
+        -->
+    </div>
+
+    <script src="vendor/jquery/jquery-2.0.3.js"></script>
+    <script data-main="demo_plain_lazy" src="vendor/requirejs/require.js"></script>
+  </body>
+</html>
+

@@ -1,0 +1,5 @@
+This software is in part based on jQuery and jQuery UI
+
+{% include jquery-MIT-LICENSE.txt  %}
+
+{% include jquery-ui-MIT-LICENSE.txt  %}

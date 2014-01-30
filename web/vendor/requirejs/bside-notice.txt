@@ -1,0 +1,3 @@
+This software is in part based on RequireJS
+
+{% include LICENSE %}
