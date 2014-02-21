@@ -11,7 +11,7 @@
 // TODO: move the refresher support out of this module and into
 // lib/scroller.js
 
-define(function(imp) { "use strict";
+define(function() { "use strict";
 
 var module = {};
 
@@ -266,10 +266,14 @@ module.hook_scroller = function(scope, events_on, scrollerController, zscroller,
             e.touches = [ { pageX: e.pageX, pageY: e.pageY } ];
             return touchStart(e);
         }, false);
-        self.container.addEventListener("mousewheel", function(e) {
+        var mousewheelevt = (/Firefox/i.test(navigator.userAgent)) ? "DOMMouseScroll" : "mousewheel";
+        self.container.addEventListener(mousewheelevt, function(e) {
             if (self.scroller.options.zooming) {
                 DEBUG("mousewheel", e);
-                self.scroller.doMouseZoom(-1 * e.wheelDelta, e.timeStamp, e.pageX, e.pageY);
+                // The FF/IE and Webkit wheel event data are not the same, see
+                // http://www.javascriptkit.com/javatutors/onmousewheel.shtml
+                var delta = e.wheelDelta ? -1 * e.wheelDelta : 120 * e.detail;
+                self.scroller.doMouseZoom(delta, e.timeStamp, e.pageX, e.pageY);
                 e.preventDefault();
                 e.stopPropagation();
             }

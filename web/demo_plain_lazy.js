@@ -1,9 +1,9 @@
 define([
   'lib/auxiliary/assert',
   'lib/lazy_scroll',
-], function(assert, lazy) { "use strict";
+], function(assert, lazy_scroll) { "use strict";
 
-/* global console:false */
+/* global console, $ */
 
 var $scope = { on: function() {} };
 
@@ -32,11 +32,11 @@ var container = $("#main");
 
 var options = {};
 
-var lazy_scroll = lazy.create_with_div($scope, lister, container, options);
+var scroll_instance = lazy_scroll.create_with_div($scope, lister, container, options);
 
 var resize = function() {
     $("#main")[0].style.height = "" + (window.innerHeight - 100) + "px";
-    lazy_scroll.recreate();
+    scroll_instance.recreate();
 };
 
 resize();
@@ -56,8 +56,8 @@ var check_positions = function() {
         if (top > -100) {
             poss.push([top, h]);
             var item_i = parseInt(items[i].getAttribute("id").substr("item_".length), 10);
-            var node = lazy_scroll.lazy_scroll.root.node_by_lister_i(item_i);
-            assert(h == lazy_scroll.lazy_scroll.height_cache[item_i], node);
+            var node = scroll_instance.lazy_scroll.root.node_by_lister_i(item_i);
+            assert(h == scroll_instance.lazy_scroll.height_cache[item_i], node);
         }
     }
     if (poss.length === 0) return;
@@ -71,10 +71,10 @@ var check_positions = function() {
 };
 
 var test_step = function() {
-    if (lazy_scroll.lazy_scroll.rendering()) return;
+    if (scroll_instance.lazy_scroll.rendering()) return;
 
     try {
-        assert(lazy_scroll.lazy_scroll.height_queue.length === 0);
+        assert(scroll_instance.lazy_scroll.height_queue.length === 0);
         check_positions();
     } catch(e) {
         /* jshint debug: true */
@@ -89,7 +89,7 @@ var test_step = function() {
         pos = -1 * Math.random();
     }
     console.log("POS", pos);
-    var H = lazy_scroll.lazy_scroll.getHeight();
+    var H = scroll_instance.lazy_scroll.getHeight();
     $("#main").scrollTop(Math.abs(pos) * H);
 };
 

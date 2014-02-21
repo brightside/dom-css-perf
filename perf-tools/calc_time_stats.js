@@ -17,11 +17,14 @@ var n = 0.0;
 var total_times = {
     'ForcedLayout' : 0.0,
     'ForcedRecalculateStyles' : 0.0,
+    'ParseHTML' : 0.0,
     'Layout' : 0.0,
     'RecalculateStyles' : 0.0,
     'Paint' : 0.0,
     'EventDispatch' : 0.0,
     'TimerFire' : 0,
+    'FunctionCall' : 0,
+    'AllJS' : 0,
     'all': 0.0
 };
 var total_times_sq = _.clone(total_times);
@@ -30,11 +33,13 @@ var avg_times = _.clone(total_times);
 var counts = {
     'ForcedLayout' : 0,
     'ForcedRecalculateStyles' : 0,
+    'ParseHTML' : 0,
     'Layout' : 0,
     'RecalculateStyles' : 0,
     'Paint' : 0,
     'EventDispatch' : 0,
     'TimerFire' : 0,
+    'FunctionCall' : 0,
 };
 var total_counts = _.clone(counts);
 var total_counts_sq = _.clone(counts);
@@ -50,6 +55,8 @@ function clear_all(times) {
 }
 
 function add_to_totals(times, total_times, total_times_sq) {
+    times.AllJS = 0;
+    times.AllJS = (times.EventDispatch + times.TimerFire + times.FunctionCall);
     for (var i in times) {
         total_times[i] += times[i];
         total_times_sq[i] += times[i] * times[i];
@@ -77,14 +84,21 @@ var reset = function() {
 var handle_subitem = function(item) {
     if (typeof item === "object") {
         var t = item.type;
+        var elapsed;
         if (t === 'RecalculateStyles' ||
             t === 'Layout') {
             t = 'Forced' + t;
-            console.log(t + ", trace:");
-            (item.stackTrace || []).forEach(function(i) {
-                console.log(i.functionName + " " + i.url + ":" + i.lineNumber);
-            });
-            var elapsed = item.endTime - item.startTime;
+            if (item.stackTrace && item.stackTrace.length > 0) {
+                console.log(t + ", trace:");
+                (item.stackTrace || []).forEach(function(i) {
+                    console.log(i.functionName + " " + i.url + ":" + i.lineNumber);
+                });
+            }
+            elapsed = item.endTime - item.startTime;
+            times[t] += elapsed;
+            counts[t]++;
+        } else if (t === 'ParseHTML') {
+            elapsed = item.endTime - item.startTime;
             times[t] += elapsed;
             counts[t]++;
         } else {
@@ -102,7 +116,8 @@ var handle_item = function(item) {
             t === 'RecalculateStyles' ||
             t === 'Paint' ||
             t === 'EventDispatch' ||
-            t === 'TimerFire') {
+            t === 'TimerFire' ||
+            t === 'FunctionCall') {
             var elapsed = item.endTime - item.startTime;
             times[t] += elapsed;
             counts[t]++;
@@ -133,12 +148,17 @@ for (var i = 0; i < items.length; i++) {
 
 reset();
 
+var round = function(v) {
+    return v.toFixed(2);
+};
+
 for (var i in total_times) {
     var sum = total_times[i];
     var sqsum = total_times_sq[i];
     var avg = sum / n;
     var variance = (sqsum - ((sum * sum) / n)) / (n - 1);
-    avg_times[i] = "" + avg + " +/- " + 2 * Math.sqrt(variance);
+    console.log(i, sum, sqsum, variance, n);
+    avg_times[i] = "" + round(avg, 2) + " +/- " + round(2 * Math.sqrt(variance), 2);
 }
 
 for (var i in avg_counts) {
@@ -146,7 +166,7 @@ for (var i in avg_counts) {
     var sqsum = total_counts_sq[i];
     var avg = sum / n;
     var variance = (sqsum - ((sum * sum) / n)) / (n - 1);
-    avg_counts[i] = "" + avg + " +/- " + 2 * Math.sqrt(variance);
+    avg_counts[i] = "" + round(avg, 2) + " +/- " + round(2 * Math.sqrt(variance), 2);
 }
 console.log("n %d", n);
 console.log("average times");

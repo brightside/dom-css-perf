@@ -1,7 +1,9 @@
 define(function() {
     return function() {
         /* global console */
-        console.assert.apply(console, arguments);
+        if (console.assert && console.assert.apply) {
+            console.assert.apply(console, arguments);
+        }
         if (! arguments[0]) {
             /* jshint debug: true */
             debugger;

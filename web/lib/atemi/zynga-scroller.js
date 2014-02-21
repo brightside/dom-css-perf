@@ -6,7 +6,7 @@ define([
 
     var module = {};
     // check for non-browser env
-    if (typeof Scroller !== "undefined") {
+    if (typeof Scroller !== "undefined" && typeof window !== "undefined") {
         module.Scroller =  Scroller;
         Scroller = undefined;
     }

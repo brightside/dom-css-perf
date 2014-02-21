@@ -2,7 +2,11 @@
 // time_list.js : get rendering timings for a page
 //
 // Usage:
-//   time_list.js start_url test_url | tee logfile
+//   ./time_list.js [--port=<remote debugger port>] \
+//       --base_url=<base_url> \
+//       [--setup_path=<first url to visit>]
+//       --start_path=<url to visit before test page>
+//       --test_path=<url to measure performance on>
 //
 // requires:
 //   from node: ws
@@ -16,8 +20,6 @@
 
 /* jslint node:true */
 
-var execSync = require('execSync');
-
 var script_start_time = Date.now();
 
 function current_time() {
@@ -28,43 +30,41 @@ var log = function() {
     console.log(JSON.stringify(arguments) + ", ");
 };
 
+var argv = require('optimist').argv;
 
-function get_active_lan_ip() {
-    var interfaces = ["en0", "en1"];
-    for (var i in interfaces) {
-      var iface = interfaces[i];
-      var result = execSync.exec('ipconfig getifaddr ' + iface);
-      if (result.code === 0) {
-         my_ip = result.stdout.replace(/\n/, '');
-         return my_ip;
-      }
-    }
-    return null;
-}
+var start_path = argv.start_path;
+var test_path = argv.test_path;
+var setup_path = argv.setup_path;
+var base_url = argv.base_url;
+var port = argv.port;
+var time_factor = parseFloat(argv.time_factor || 1);
 
-
-var start_path = process.argv[2];
-var test_path = process.argv[3];
 log("Testing page", test_path);
 
 var ws;
 
 var child_process = require('child_process');
-var proxy = child_process.spawn('ios_webkit_debug_proxy');
-proxy.stdout.on('data', function(data) {
-    log('proxy.stdout', data.toString());
-});
-proxy.stderr.on('data', function(data) {
-    log('proxy.stderr', data.toString());
-});
+var proxy;
+
+if (! port) {
+    port = 9222;
+    proxy = child_process.spawn('ios_webkit_debug_proxy');
+    proxy.stdout.on('data', function(data) {
+        log('proxy.stdout', data.toString());
+    });
+    proxy.stderr.on('data', function(data) {
+        log('proxy.stderr', data.toString());
+    });
+    proxy.on('error', function(err) {
+        console.log('proxy.error', err);
+        process.exit(3);
+    });
+}
+
 var die = function(exit_code) {
-    proxy.kill();
+    if (proxy) proxy.kill();
     process.exit(exit_code);
 };
-proxy.on('error', function(err) {
-    console.log('proxy.error', err);
-    process.exit(3);
-});
 
 process.on('uncaughtException', function(err) {
     log('uncaughtException');
@@ -86,11 +86,12 @@ var connect = function(url) {
         // TODO: seems that .id is overwritten as command_ix. Is it needed for proxy or just for
         //       our internal book-keeping?
         {"id": 1, "method": "Timeline.stop", "params": { "maxCallStackDepth": 3 } },
-        {"id": 2, "method": "Page.navigate", "params":{"url": start_path } },
+        {"id": 2, "method": "Page.navigate", "params":{"url": base_url + start_path } },
         {"id": 11, "method": "Timeline.start", "params": { "maxCallStackDepth": 10 } },
-        {"id": 12, "method": "Page.navigate", "params":{"url": test_path } },
+        {"id": 12, "method": "Page.navigate", "params":{"url": base_url + test_path } },
     ];
     var waits = [100, 2000, 300, 3000];
+    waits = waits.map(function(w) { return w * time_factor; });
     var iteration_wait = 1000; // a bit of extra wait time on the top of command wait times
     for (var i in waits) { iteration_wait += waits[i]; }
 
@@ -101,7 +102,7 @@ var connect = function(url) {
     log('open', url, current_time());
     var WebSocket = require('ws');
     ws = new WebSocket(url);
-    var command_ix = 0;
+    var command_ix = 1;
 
     var send_next = function() {
         var cmd = commands[command_ix];
@@ -112,9 +113,19 @@ var connect = function(url) {
             ws.send(str);
         }
     };
+    var send_setup = function() {
+        if (setup_path) {
+            var cmd = { id: 1000, method: "Page.navigate", params: { url: base_url + setup_path } };
+            var str = JSON.stringify(cmd);
+            log('send', str, current_time());
+            ws.send(str);
+        } else {
+            send_next();
+        }
+    };
     ws.on('open', function() {
         log('connected', current_time());
-        send_next();
+        send_setup();
     });
     ws.on('error', function(err) {
         log('error %s', err, current_time());
@@ -132,7 +143,7 @@ var connect = function(url) {
             die(0);
         } else {
             log("iteration", iteration_ix, current_time());
-            command_ix = 0;
+            command_ix = iteration_ix === 1 ? 1 : 0;
             send_next();
             setTimeout(function() { iterate(iterate); }, iteration_wait);
         }
@@ -179,7 +190,7 @@ var start = function(start) {
 
     var request = http.request({ 'host': 'localhost',
                                  'path': '/json',
-                                 'port': 9222,
+                                 'port': port,
                                  'method': 'GET' },
                                  on_pages);
 

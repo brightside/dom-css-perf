@@ -710,8 +710,8 @@ module.create_with_div = function($scope, lister, container, options) {
             }
             container[0].removeEventListener("scroll", scrollHandler);
             lazy_scroll.release();
-            div.remove();
-        }
+            div[0].parentElement.removeChild(div[0]);
+        },
     };
 };
 
