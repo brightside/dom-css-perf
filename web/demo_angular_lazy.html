@@ -1,0 +1,43 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" id="view" content="user-scalable=no, initial-scale=1, maximum-scale=1"/>
+    <title>Angular lazy scroll demo</title>
+    <style>
+        .item {
+            border-top: 2px solid gray;
+            background-color: #f0f0f0;
+            position: absolute;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        body {
+            -webkit-user-select: none;
+            overflow-y: hide;
+        }
+    </style>
+  </head>
+  <body style="font-family: Avenir">
+    <div id="heading">Scrollable list with up to 1 million items with variable heights</div>
+    <div ng-controller="DemoCtrl" id="demo">
+        <div><button ng-click="cycle()">Cycle</button> current: <span ng-bind="items.count()"></span></div>
+        <div id="main" style="left: 10px; right: 55px; height: 0px; position: absolute; background-color: lightgray; overflow-y: hidden;">
+            <div lazy-repeat="items as i" class='item' style="top: 0; position: absolute;">
+               <p>This is item {{i}}</p>
+               <p ng-show='i % 4 === 0'>Some items have extra stuff</p>
+               <p ng-show='i % 7 === 0'>Some items have even more extra stuff</p>
+            </div>
+        </div>
+        <!-- not working yet
+        <div id="bar" style="width: 40px; height: 400px; position: absolute; right: 10px; background-color: lightblue;">
+            <div id="thumb" style="width: 40px; height: 40px; position:absolute; left: 0px; background-color: red;"></div>
+        </div>
+        -->
+    </div>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.1.5/angular.js"></script>
+    <script data-main="demo_angular_lazy" src="vendor/requirejs/require.js"></script>
+  </body>
+</html>
+
